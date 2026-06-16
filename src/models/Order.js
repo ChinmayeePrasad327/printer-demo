@@ -55,11 +55,43 @@ const orderSchema = new mongoose.Schema(
             ],
             default: "normal"
         },
+        priorityScore: {
+            type: Number,
+            default: 0
+        },
+        priorityRequested: {
+            type: Boolean,
+            default: false
+        },
+
+        priorityApproved: {
+            type: Boolean,
+            default: false
+        },
+
+        priorityReason: {
+            type: String,
+            default: ""
+        },
+
+        approvedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+        },
+        approvedAt: {
+            type: Date
+        },
+
+        rejectedReason: {
+            type: String,
+            default: ""
+        },
 
         confidential: {
             type: Boolean,
             default: false
         },
+
 
         queuePosition: {
             type: Number,
@@ -74,7 +106,8 @@ const orderSchema = new mongoose.Schema(
         estimatedCost: {
             type: Number,
             default: 0
-        }
+        },
+
     },
     {
         timestamps: true

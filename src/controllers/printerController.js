@@ -123,10 +123,53 @@ const deletePrinter = async (req, res) => {
     }
 };
 
+const {
+    getPrinterRecommendations
+} = require(
+    "../services/recommendationService"
+);
+
+const getRecommendations =
+    async (req, res) => {
+
+        try {
+
+            const {
+                pages,
+                copies,
+                priorityLevel
+            } = req.query;
+
+            const recommendations =
+                await getPrinterRecommendations(
+                    Number(pages),
+                    Number(copies),
+                    priorityLevel
+                );
+
+            res.status(200).json({
+                success: true,
+                data:
+                    recommendations
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+                success: false,
+                message:
+                    error.message
+            });
+
+        }
+
+    };
+
 module.exports = {
     createPrinter,
     getPrinters,
     getPrinterById,
     updatePrinter,
-    deletePrinter
+    deletePrinter,
+    getRecommendations
 };
