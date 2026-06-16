@@ -1,0 +1,9 @@
+{
+    clerkId,
+        name,
+        email,
+        rollNo,
+        department,
+        year,
+        role
+}
