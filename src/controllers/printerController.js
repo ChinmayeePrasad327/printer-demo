@@ -5,3 +5,128 @@
 // Update Printer
 
 // Delete Printer
+const Printer = require("../models/Printer");
+
+// Create Printer
+const createPrinter = async (req, res) => {
+    try {
+        const printer = await Printer.create(req.body);
+
+        res.status(201).json({
+            success: true,
+            data: printer
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Get All Printers
+const getPrinters = async (req, res) => {
+    try {
+        const printers = await Printer.find();
+
+        res.status(200).json({
+            success: true,
+            count: printers.length,
+            data: printers
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Get Single Printer
+const getPrinterById = async (req, res) => {
+    try {
+        const printer = await Printer.findById(req.params.id);
+
+        if (!printer) {
+            return res.status(404).json({
+                success: false,
+                message: "Printer not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: printer
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Update Printer
+const updatePrinter = async (req, res) => {
+    try {
+        const printer = await Printer.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!printer) {
+            return res.status(404).json({
+                success: false,
+                message: "Printer not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: printer
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Delete Printer
+const deletePrinter = async (req, res) => {
+    try {
+        const printer = await Printer.findByIdAndDelete(
+            req.params.id
+        );
+
+        if (!printer) {
+            return res.status(404).json({
+                success: false,
+                message: "Printer not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Printer deleted"
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+module.exports = {
+    createPrinter,
+    getPrinters,
+    getPrinterById,
+    updatePrinter,
+    deletePrinter
+};

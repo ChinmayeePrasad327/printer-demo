@@ -1,20 +1,83 @@
-{
-    userId,
-        printerId,
+const mongoose = require("mongoose");
 
-        fileName,
-        fileUrl,
+const orderSchema = new mongoose.Schema(
+    {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
 
-        totalPages,
-        copies,
+        printerId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Printer",
+            required: true
+        },
 
-        status,
+        fileName: {
+            type: String,
+            required: true
+        },
 
-        priority,
+        fileUrl: {
+            type: String,
+            required: true
+        },
 
-        queuePosition,
+        totalPages: {
+            type: Number,
+            required: true
+        },
 
-        eta,
+        copies: {
+            type: Number,
+            default: 1
+        },
 
-        pickupOtp
-}
+        status: {
+            type: String,
+            enum: [
+                "pending",
+                "accepted",
+                "printing",
+                "ready",
+                "collected",
+                "cancelled"
+            ],
+            default: "pending"
+        },
+
+        priorityLevel: {
+            type: String,
+            enum: [
+                "normal",
+                "priority"
+            ],
+            default: "normal"
+        },
+
+        confidential: {
+            type: Boolean,
+            default: false
+        },
+
+        queuePosition: {
+            type: Number,
+            default: 0
+        },
+
+        eta: {
+            type: Number,
+            default: 0
+        },
+
+        estimatedCost: {
+            type: Number,
+            default: 0
+        }
+    },
+    {
+        timestamps: true
+    });
+
+module.exports = mongoose.model("Order", orderSchema);

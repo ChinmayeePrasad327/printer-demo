@@ -5,3 +5,26 @@
 // PATCH / api / printers /: id
 
 // DELETE / api / printers /: id
+const express = require("express");
+
+const router = express.Router();
+
+const {
+    createPrinter,
+    getPrinters,
+    getPrinterById,
+    updatePrinter,
+    deletePrinter
+} = require("../controllers/printerController");
+
+router.post("/", createPrinter);
+
+router.get("/", getPrinters);
+
+router.get("/:id", getPrinterById);
+
+router.patch("/:id", updatePrinter);
+
+router.delete("/:id", deletePrinter);
+
+module.exports = router;
