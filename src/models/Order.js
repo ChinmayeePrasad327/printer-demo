@@ -47,6 +47,31 @@ const orderSchema = new mongoose.Schema(
             default: "pending"
         },
 
+        acceptedAt: {
+            type: Date
+        },
+
+        printingAt: {
+            type: Date
+        },
+
+        readyAt: {
+            type: Date
+        },
+
+        collectedAt: {
+            type: Date
+        },
+
+        priorityLevel: {
+            type: String,
+            enum: [
+                "normal",
+                "priority"
+            ],
+            default: "normal"
+        },
+
         priorityLevel: {
             type: String,
             enum: [

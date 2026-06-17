@@ -13,6 +13,13 @@ const {
     calculateCost
 } = require("../services/recommendationService");
 
+
+const {
+    createNotification
+} = require(
+    "../services/notificationService"
+);
+
 // =====================================
 // CREATE ORDER
 // =====================================
@@ -207,6 +214,19 @@ const getOrderById = async (req, res) => {
             success: true,
             data: order
         });
+        if (
+            req.user.role !== "admin" &&
+            req.user.role !== "operator" &&
+            order.userId.toString() !==
+            req.user._id.toString()
+        ) {
+
+            return res.status(403).json({
+                success: false,
+                message: "Unauthorized"
+            });
+
+        }
 
     } catch (error) {
 
@@ -239,10 +259,64 @@ const updateOrderStatus = async (req, res) => {
 
         }
 
-        order.status =
-            req.body.status;
+        order.status = req.body.status;
 
+        if (req.body.status === "accepted") {
+            order.acceptedAt = new Date();
+        }
+
+        if (req.body.status === "printing") {
+            order.printingAt = new Date();
+        }
+
+        if (req.body.status === "ready") {
+            order.readyAt = new Date();
+        }
+
+        if (req.body.status === "collected") {
+            order.collectedAt = new Date();
+        }
         await order.save();
+
+        if (req.body.status === "ready") {
+
+            await createNotification(
+
+                order.userId,
+
+                "Order Ready",
+
+                "Your print job is ready for collection."
+
+            );
+
+        }
+        if (req.body.status === "collected") {
+
+            await createNotification(
+
+                order.userId,
+
+                "Order Collected",
+
+                "Your print job has been collected."
+
+            );
+
+        }
+        if (req.body.status === "printing") {
+
+            await createNotification(
+
+                order.userId,
+
+                "Printing Started",
+
+                "Your document is now being printed."
+
+            );
+
+        }
 
         await recalculateQueue(
             order.printerId
@@ -366,6 +440,15 @@ const requestPriority = async (req, res) => {
             });
 
         }
+        if (order.priorityRequested) {
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Priority already requested"
+            });
+
+        }
 
         order.priorityRequested = true;
 
@@ -458,6 +541,17 @@ const approvePriority = async (req, res) => {
 
         await order.save();
 
+
+        await createNotification(
+
+            order.userId,
+
+            "Priority Approved",
+
+            "Your priority request has been approved."
+
+        );
+
         await recalculateQueue(
             order.printerId
         );
@@ -515,6 +609,16 @@ const rejectPriority = async (req, res) => {
             "Rejected";
 
         await order.save();
+
+        await createNotification(
+
+            order.userId,
+
+            "Priority Rejected",
+
+            `Your priority request was rejected. Reason: ${order.rejectedReason}`
+
+        );
 
         await recalculateQueue(
             order.printerId
