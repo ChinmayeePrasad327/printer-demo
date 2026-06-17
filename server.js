@@ -1,4 +1,9 @@
 require("dotenv").config();
+
+console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
+console.log("API Key:", process.env.CLOUDINARY_API_KEY);
+console.log("API Secret Exists:", !!process.env.CLOUDINARY_API_SECRET);
+
 const { clerkMiddleware } = require("@clerk/express");
 
 const express = require("express");
@@ -13,6 +18,7 @@ const userRoutes = require("./src/routes/userRoutes");
 const authRoutes = require("./src/routes/authRoutes");
 const analyticsRoutes = require("./src/routes/analyticsRoutes");
 const adminAnalyticsRoutes = require("./src/routes/adminAnalyticsRoutes");
+const uploadRoutes = require("./src/routes/uploadRoutes");
 
 // Connect Database
 connectDB();
@@ -33,8 +39,9 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/analytics", analyticsRoutes);
 
-
 app.use("/api/admin-analytics", adminAnalyticsRoutes);
+
+app.use("/api/upload", uploadRoutes);
 
 app.get("/", (req, res) => { res.send("PrintFlow Backend Running 🚀"); });
 
