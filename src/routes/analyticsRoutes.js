@@ -18,12 +18,29 @@ const {
 } = require(
     "../controllers/analyticsController"
 );
-
+router.get("/debug", (req, res) => {
+    res.json({
+        route: "debug reached"
+    });
+});
+// router.get(
+//     "/my-stats",
+//     requireAuth(),
+//     loadUser,
+//     getMyStats
+// );
 router.get(
     "/my-stats",
     requireAuth(),
-    loadUser,
-    getMyStats
+    (req, res) => {
+
+        res.json({
+            success: true,
+            clerkId:
+                req.auth.userId
+        });
+
+    }
 );
 
 router.get(
@@ -39,5 +56,11 @@ router.get(
     loadUser,
     getFavoritePrinter
 );
+router.get("/test", (req, res) => {
+    res.json({
+        success: true,
+        message: "Analytics route works"
+    });
+});
 
 module.exports = router;
