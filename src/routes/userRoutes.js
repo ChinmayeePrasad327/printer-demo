@@ -1,13 +1,15 @@
-// POST / api / users
-
-// GET / api / users /: clerkId
-
-// PATCH / api / users /: id
 const express = require("express");
 
 const router = express.Router();
 
-const { requireAuth } = require("@clerk/express");
+const { requireAuth } =
+    require("@clerk/express");
+
+const allowRoles =
+    require("../middleware/roleMiddleware");
+
+const loadUser =
+    require("../middleware/loadUser");
 
 const {
     createUser,
@@ -17,20 +19,39 @@ const {
     syncUser
 } = require("../controllers/userController");
 
-// Clerk User Sync
+// =====================================
+// CLERK USER SYNC
+// =====================================
+
 router.post(
     "/sync",
     requireAuth(),
     syncUser
 );
 
-// Development Routes
-router.post("/", createUser);
+// =====================================
+// ADMIN ROUTES
+// =====================================
 
-router.get("/", getUsers);
+router.get(
+    "/",
+    requireAuth(),
+    allowRoles("admin"),
+    getUsers
+);
 
-router.get("/:id", getUserById);
+router.get(
+    "/:id",
+    requireAuth(),
+    loadUser,
+    getUserById
+);
 
-router.patch("/:id", updateUser);
+router.patch(
+    "/:id",
+    requireAuth(),
+    loadUser,
+    updateUser
+);
 
 module.exports = router;

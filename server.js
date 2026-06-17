@@ -11,6 +11,9 @@ const printerRoutes = require("./src/routes/printerRoutes");
 const orderRoutes = require("./src/routes/orderRoutes");
 const userRoutes = require("./src/routes/userRoutes");
 const authRoutes = require("./src/routes/authRoutes");
+const analyticsRoutes = require("./src/routes/analyticsRoutes");
+const adminAnalyticsRoutes = require("./src/routes/adminAnalyticsRoutes");
+
 // Connect Database
 connectDB();
 
@@ -28,7 +31,13 @@ app.use("/api/users", userRoutes);
 
 app.use("/api/auth", authRoutes);
 
+app.use("/api/analytics", analyticsRoutes);
+
+
+app.use("/api/admin-analytics", adminAnalyticsRoutes);
+
 app.get("/", (req, res) => { res.send("PrintFlow Backend Running 🚀"); });
+
 
 const PORT = process.env.PORT || 5000;
 

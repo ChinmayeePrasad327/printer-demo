@@ -1,6 +1,8 @@
 const express = require("express");
 
 const router = express.Router();
+const loadUser =
+    require("../middleware/loadUser");
 
 const { requireAuth } =
     require("@clerk/express");
@@ -14,51 +16,59 @@ const {
     getOrderById,
     updateOrderStatus,
     cancelOrder,
-
     requestPriority,
     getPendingPriorityRequests,
     approvePriority,
     rejectPriority
-
 } = require("../controllers/orderController");
 
-// =======================
+// =====================================
 // USER ROUTES
-// =======================
+// =====================================
 
 // Create Order
 router.post(
     "/",
+    requireAuth(),
+    loadUser,
     createOrder
 );
 
 // Get All Orders
 router.get(
     "/",
+    requireAuth(),
+    loadUser,
     getOrders
 );
 
 // Get Single Order
 router.get(
     "/:id",
+    requireAuth(),
+    loadUser,
     getOrderById
-);
-
-// Cancel Order
-router.patch(
-    "/:id/cancel",
-    cancelOrder
 );
 
 // Request Priority
 router.patch(
     "/:id/request-priority",
+    requireAuth(),
+    loadUser,
     requestPriority
 );
 
-// =======================
-// OPERATOR / ADMIN
-// =======================
+// Cancel Order
+router.patch(
+    "/:id/cancel",
+    requireAuth(),
+    loadUser,
+    cancelOrder
+);
+
+// =====================================
+// OPERATOR / ADMIN ROUTES
+// =====================================
 
 // View Pending Priority Requests
 router.get(
@@ -93,7 +103,7 @@ router.patch(
     rejectPriority
 );
 
-// Update Status
+// Update Order Status
 router.patch(
     "/:id/status",
     requireAuth(),

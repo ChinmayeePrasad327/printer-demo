@@ -1,37 +1,27 @@
-// Create Order
-
-// Get Orders
-
-// Get Single Order
-
-// Update Status
-
-// Cancel Order
 const Order = require("../models/Order");
-
-const {
-    recalculateQueue,
-    recalculateETA
-} = require("../services/queueService");
+const Printer = require("../models/Printer");
+const User = require("../models/User");
 
 const {
     calculateQueuePosition,
-    calculateETA
+    calculateETA,
+    recalculateQueue,
+    recalculateETA
 } = require("../services/queueService");
 
 const {
     calculateCost
 } = require("../services/recommendationService");
 
-const Printer = require("../models/Printer");
+// =====================================
+// CREATE ORDER
+// =====================================
 
-// Create Order
 const createOrder = async (req, res) => {
 
     try {
 
         const {
-            userId,
             printerId,
             fileName,
             fileUrl,
@@ -41,8 +31,25 @@ const createOrder = async (req, res) => {
             confidential
         } = req.body;
 
+        const clerkId =
+            req.auth.userId;
+
+        const user =
+            await User.findOne({
+                clerkId
+            });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
         const printer =
-            await Printer.findById(printerId);
+            await Printer.findById(
+                printerId
+            );
 
         if (!printer) {
             return res.status(404).json({
@@ -72,7 +79,8 @@ const createOrder = async (req, res) => {
         const order =
             await Order.create({
 
-                userId,
+                userId:
+                    user._id,
 
                 printerId,
 
@@ -86,6 +94,12 @@ const createOrder = async (req, res) => {
 
                 priorityLevel,
 
+                priorityScore:
+                    priorityLevel ===
+                        "priority"
+                        ? 1
+                        : 0,
+
                 confidential,
 
                 queuePosition,
@@ -93,8 +107,16 @@ const createOrder = async (req, res) => {
                 eta,
 
                 estimatedCost
+
             });
 
+        await recalculateQueue(
+            printerId
+        );
+
+        await recalculateETA(
+            printerId
+        );
         res.status(201).json({
             success: true,
             data: order
@@ -108,17 +130,40 @@ const createOrder = async (req, res) => {
         });
 
     }
+
 };
 
-// Get All Orders
+// =====================================
+// GET ALL ORDERS
+// =====================================
+
 const getOrders = async (req, res) => {
 
     try {
 
-        const orders =
-            await Order.find()
-                .populate("userId")
-                .populate("printerId");
+        let orders;
+
+        if (
+            req.user.role === "admin" ||
+            req.user.role === "operator"
+        ) {
+
+            orders =
+                await Order.find()
+                    .populate("userId")
+                    .populate("printerId");
+
+        } else {
+
+            orders =
+                await Order.find({
+                    userId:
+                        req.user._id
+                })
+                    .populate("userId")
+                    .populate("printerId");
+
+        }
 
         res.status(200).json({
             success: true,
@@ -134,8 +179,14 @@ const getOrders = async (req, res) => {
         });
 
     }
+
 };
+// =====================================
+// GET SINGLE ORDER
+// =====================================
+
 const getOrderById = async (req, res) => {
+
     try {
 
         const order =
@@ -144,10 +195,12 @@ const getOrderById = async (req, res) => {
                 .populate("printerId");
 
         if (!order) {
+
             return res.status(404).json({
                 success: false,
                 message: "Order not found"
             });
+
         }
 
         res.status(200).json({
@@ -163,7 +216,12 @@ const getOrderById = async (req, res) => {
         });
 
     }
+
 };
+
+// =====================================
+// UPDATE STATUS
+// =====================================
 
 const updateOrderStatus = async (req, res) => {
 
@@ -173,13 +231,16 @@ const updateOrderStatus = async (req, res) => {
             await Order.findById(req.params.id);
 
         if (!order) {
+
             return res.status(404).json({
                 success: false,
                 message: "Order not found"
             });
+
         }
 
-        order.status = req.body.status;
+        order.status =
+            req.body.status;
 
         await order.save();
 
@@ -190,6 +251,7 @@ const updateOrderStatus = async (req, res) => {
         await recalculateETA(
             order.printerId
         );
+
         res.status(200).json({
             success: true,
             data: order
@@ -203,101 +265,61 @@ const updateOrderStatus = async (req, res) => {
         });
 
     }
+
 };
+
+// =====================================
+// CANCEL ORDER
+// =====================================
 
 const cancelOrder = async (req, res) => {
 
     try {
 
         const order =
-            await Order.findById(req.params.id);
+            await Order.findById(
+                req.params.id
+            );
 
         if (!order) {
+
             return res.status(404).json({
                 success: false,
                 message: "Order not found"
             });
+
         }
 
-        order.status = "cancelled";
+        if (
+            order.userId.toString() !==
+            req.user._id.toString() &&
+            req.user.role !== "admin"
+        ) {
 
-        await order.save();
-
-        res.status(200).json({
-            success: true,
-            message: "Order cancelled"
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-
-    }
-};
-
-// Get Pending Priority Requests
-const getPendingPriorityRequests = async (req, res) => {
-
-    try {
-
-        const orders = await Order.find({
-            priorityRequested: true,
-            priorityApproved: false
-        })
-            .populate("userId")
-            .populate("printerId");
-
-        res.status(200).json({
-            success: true,
-            count: orders.length,
-            data: orders
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-
-    }
-
-};
-
-// Approve Priority
-const approvePriority = async (req, res) => {
-
-    try {
-
-        const order =
-            await Order.findById(req.params.id);
-
-        if (!order) {
-            return res.status(404).json({
+            return res.status(403).json({
                 success: false,
-                message: "Order not found"
+                message: "Unauthorized"
             });
+
         }
 
-        order.priorityApproved = true;
-
-        order.priorityLevel = "priority";
-
-        order.priorityScore = 1;
-
-        order.approvedBy = req.user._id;
-
-        order.approvedAt = new Date();
+        order.status =
+            "cancelled";
 
         await order.save();
 
+        await recalculateQueue(
+            order.printerId
+        );
+
+        await recalculateETA(
+            order.printerId
+        );
+
         res.status(200).json({
             success: true,
-            message: "Priority approved",
-            data: order
+            message:
+                "Order cancelled"
         });
 
     } catch (error) {
@@ -311,62 +333,38 @@ const approvePriority = async (req, res) => {
 
 };
 
-// Reject Priority
-const rejectPriority = async (req, res) => {
+// =====================================
+// REQUEST PRIORITY
+// =====================================
 
-    try {
-
-        const order =
-            await Order.findById(req.params.id);
-
-        if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: "Order not found"
-            });
-        }
-
-        order.priorityRequested = false;
-
-        order.priorityApproved = false;
-
-        order.priorityScore = 0;
-
-        order.rejectedReason =
-            req.body.reason || "Rejected";
-
-        await order.save();
-
-        res.status(200).json({
-            success: true,
-            message: "Priority rejected",
-            data: order
-        });
-
-    } catch (error) {
-
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-
-    }
-
-};
-
-// Request Priority
 const requestPriority = async (req, res) => {
 
     try {
 
         const order =
-            await Order.findById(req.params.id);
+            await Order.findById(
+                req.params.id
+            );
 
         if (!order) {
+
             return res.status(404).json({
                 success: false,
                 message: "Order not found"
             });
+
+        }
+
+        if (
+            order.userId.toString() !==
+            req.user._id.toString()
+        ) {
+
+            return res.status(403).json({
+                success: false,
+                message: "Unauthorized"
+            });
+
         }
 
         order.priorityRequested = true;
@@ -378,7 +376,158 @@ const requestPriority = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "Priority request submitted",
+            message:
+                "Priority request submitted",
+            data: order
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+
+};
+// =====================================
+// PENDING PRIORITY REQUESTS
+// =====================================
+
+const getPendingPriorityRequests =
+    async (req, res) => {
+
+        try {
+
+            const orders =
+                await Order.find({
+                    priorityRequested: true,
+                    priorityApproved: false
+                })
+                    .populate("userId")
+                    .populate("printerId");
+
+            res.status(200).json({
+                success: true,
+                count: orders.length,
+                data: orders
+            });
+
+        } catch (error) {
+
+            res.status(500).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+    };
+
+// =====================================
+// APPROVE PRIORITY
+// =====================================
+
+const approvePriority = async (req, res) => {
+
+    try {
+
+        const order =
+            await Order.findById(req.params.id);
+
+        if (!order) {
+
+            return res.status(404).json({
+                success: false,
+                message: "Order not found"
+            });
+
+        }
+
+        order.priorityApproved = true;
+
+        order.priorityLevel = "priority";
+
+        order.priorityScore = 1;
+
+        order.approvedBy = req.user._id;
+
+        order.approvedAt =
+            new Date();
+
+        await order.save();
+
+        await recalculateQueue(
+            order.printerId
+        );
+
+        await recalculateETA(
+            order.printerId
+        );
+
+        res.status(200).json({
+            success: true,
+            message:
+                "Priority approved",
+            data: order
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+
+};
+
+// =====================================
+// REJECT PRIORITY
+// =====================================
+
+const rejectPriority = async (req, res) => {
+
+    try {
+
+        const order =
+            await Order.findById(req.params.id);
+
+        if (!order) {
+
+            return res.status(404).json({
+                success: false,
+                message: "Order not found"
+            });
+
+        }
+
+        order.priorityRequested = false;
+
+        order.priorityApproved = false;
+
+        order.priorityScore = 0;
+
+        order.rejectedReason =
+            req.body.reason ||
+            "Rejected";
+
+        await order.save();
+
+        await recalculateQueue(
+            order.printerId
+        );
+
+        await recalculateETA(
+            order.printerId
+        );
+
+        res.status(200).json({
+            success: true,
+            message:
+                "Priority rejected",
             data: order
         });
 
@@ -394,13 +543,23 @@ const requestPriority = async (req, res) => {
 };
 
 module.exports = {
+
     createOrder,
+
     getOrders,
+
     getOrderById,
+
     updateOrderStatus,
+
     cancelOrder,
+
     requestPriority,
+
     getPendingPriorityRequests,
+
     approvePriority,
+
     rejectPriority
+
 };

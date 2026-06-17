@@ -1,10 +1,15 @@
 const Order = require("../models/Order");
 const Printer = require("../models/Printer");
 
-// Queue Position
-const calculateQueuePosition = async (printerId) => {
+// =====================================
+// QUEUE POSITION FOR NEW ORDER
+// =====================================
 
-    const pendingOrders =
+const calculateQueuePosition = async (
+    printerId
+) => {
+
+    const activeOrders =
         await Order.countDocuments({
             printerId,
             status: {
@@ -16,14 +21,22 @@ const calculateQueuePosition = async (printerId) => {
             }
         });
 
-    return pendingOrders + 1;
+    return activeOrders + 1;
+
 };
 
-// ETA
-const calculateETA = async (printerId) => {
+// =====================================
+// ETA FOR NEW ORDER
+// =====================================
+
+const calculateETA = async (
+    printerId
+) => {
 
     const printer =
-        await Printer.findById(printerId);
+        await Printer.findById(
+            printerId
+        );
 
     if (!printer) {
         return 0;
@@ -58,7 +71,10 @@ const calculateETA = async (printerId) => {
 
 };
 
-// Recalculate Queue
+// =====================================
+// RECALCULATE QUEUE
+// =====================================
+
 const recalculateQueue = async (
     printerId
 ) => {
@@ -73,10 +89,11 @@ const recalculateQueue = async (
                     "printing"
                 ]
             }
-        }).sort({
-            priorityLevel: -1,
-            createdAt: 1
-        });
+        })
+            .sort({
+                priorityScore: -1,
+                createdAt: 1
+            });
 
     for (
         let i = 0;
@@ -93,13 +110,18 @@ const recalculateQueue = async (
 
 };
 
-// Recalculate ETA
+// =====================================
+// RECALCULATE ETA
+// =====================================
+
 const recalculateETA = async (
     printerId
 ) => {
 
     const printer =
-        await Printer.findById(printerId);
+        await Printer.findById(
+            printerId
+        );
 
     if (!printer) {
         return;
@@ -115,18 +137,19 @@ const recalculateETA = async (
                     "printing"
                 ]
             }
-        }).sort({
-            queuePosition: 1
-        });
+        })
+            .sort({
+                queuePosition: 1
+            });
 
     let pagesAhead = 0;
 
     for (const order of orders) {
-
-        order.eta = Math.ceil(
-            pagesAhead /
-            printer.pagesPerMinute
-        );
+        order.eta =
+            Math.ceil(
+                pagesAhead /
+                printer.pagesPerMinute
+            ) + 1;
 
         pagesAhead +=
             order.totalPages *
@@ -138,9 +161,18 @@ const recalculateETA = async (
 
 };
 
+// =====================================
+// EXPORTED FUNCTIONS
+// =====================================
+
 module.exports = {
+
     calculateQueuePosition,
+
     calculateETA,
+
     recalculateQueue,
+
     recalculateETA
+
 };

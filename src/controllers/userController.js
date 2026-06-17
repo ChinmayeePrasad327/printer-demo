@@ -116,10 +116,10 @@ const syncUser = async (req, res) => {
         const {
             email,
             name,
-            role,
             rollNo,
             department
         } = req.body;
+
         if (!isAllowedEmail(email)) {
 
             return res.status(403).json({
@@ -130,20 +130,27 @@ const syncUser = async (req, res) => {
 
         }
 
-        let user = await User.findOne({
-            clerkId
-        });
+        let user =
+            await User.findOne({
+                clerkId
+            });
 
         if (!user) {
 
-            user = await User.create({
-                clerkId,
-                email,
-                name,
-                role,
-                rollNo,
-                department
-            });
+            user =
+                await User.create({
+
+                    clerkId,
+
+                    email,
+
+                    name,
+
+                    rollNo,
+
+                    department
+
+                });
 
         }
 
@@ -161,7 +168,6 @@ const syncUser = async (req, res) => {
 
     }
 };
-
 module.exports = {
     createUser,
     getUsers,

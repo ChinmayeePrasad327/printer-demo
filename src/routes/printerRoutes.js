@@ -14,10 +14,17 @@ const {
     getPrinters,
     getPrinterById,
     updatePrinter,
-    deletePrinter
+    deletePrinter,
+    getRecommendations
 } = require("../controllers/printerController");
 
 router.post("/", createPrinter);
+
+// IMPORTANT
+router.get(
+    "/recommendations",
+    getRecommendations
+);
 
 router.get("/", getPrinters);
 
